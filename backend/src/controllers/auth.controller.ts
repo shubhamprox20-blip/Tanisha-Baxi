@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { execute, query } from "../db/pool.js";
+import { query } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { signAuthToken } from "../utils/jwt.js";
@@ -39,20 +39,21 @@ export async function register(req: Request, res: Response): Promise<void> {
     pincode: string; country: string;
   };
 
-  const existing = await query<{ id: number }>("SELECT id FROM users WHERE email = ?", [b.email]);
+  const existing = await query<{ id: number }>("SELECT id FROM users WHERE email = $1", [b.email]);
   if (existing.length > 0) {
     throw ApiError.conflict("Email already registered.");
   }
 
   const passwordHash = await hashPassword(b.password);
-  const result = await execute(
+  const inserted = await query<{ id: number }>(
     `INSERT INTO users
       (first_name, last_name, email, phone, password_hash, house, street, landmark, city, state, pincode, country, role)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'customer')`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'customer')
+     RETURNING id`,
     [b.first_name, b.last_name, b.email, b.phone, passwordHash, b.house, b.street, b.landmark || null, b.city, b.state, b.pincode, b.country || "India"],
   );
 
-  const user = { id: result.insertId, email: b.email, role: "customer" as const };
+  const user = { id: inserted[0].id, email: b.email, role: "customer" as const };
   issueSession(res, user);
 
   res.status(201).json({
@@ -66,7 +67,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const { email, password } = req.body as { email: string; password: string };
 
   const rows = await query<UserRow>(
-    "SELECT id, first_name, last_name, email, phone, password_hash, role FROM users WHERE email = ?",
+    "SELECT id, first_name, last_name, email, phone, password_hash, role FROM users WHERE email = $1",
     [email],
   );
   const user = rows[0];

@@ -1,11 +1,18 @@
-import type { PoolConnection } from "mysql2/promise";
-import { pool, withTransaction } from "../db/pool.js";
+import { query, withTransaction } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export interface LineItem {
   product_id: number;
   product_name: string;
   unit_price: number; // rupees
+  quantity: number;
+}
+
+interface CartRow {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
   quantity: number;
 }
 
@@ -16,8 +23,8 @@ export interface LineItem {
  */
 export async function resolveLineItems(userId: number, productId?: number): Promise<LineItem[]> {
   if (productId) {
-    const [rows] = await pool.query<any[]>(
-      "SELECT id, name, price, stock FROM products WHERE id = ?",
+    const rows = await query<CartRow>(
+      "SELECT id, name, price, stock FROM products WHERE id = $1",
       [productId],
     );
     if (rows.length === 0) throw ApiError.notFound("Product not found");
@@ -26,10 +33,10 @@ export async function resolveLineItems(userId: number, productId?: number): Prom
     return [{ product_id: p.id, product_name: p.name, unit_price: p.price, quantity: 1 }];
   }
 
-  const [rows] = await pool.query<any[]>(
+  const rows = await query<CartRow>(
     `SELECT p.id, p.name, p.price, p.stock, c.quantity
        FROM cart c JOIN products p ON p.id = c.product_id
-      WHERE c.user_id = ?`,
+      WHERE c.user_id = $1`,
     [userId],
   );
   if (rows.length === 0) throw ApiError.badRequest("Your cart is empty.");
@@ -58,9 +65,11 @@ export async function markOrderPaid(
   paymentId: string,
   signature: string | null,
 ): Promise<void> {
-  await withTransaction(async (conn: PoolConnection) => {
-    const [rows] = await conn.query<any[]>(
-      "SELECT id, user_id, status FROM orders WHERE razorpay_order_id = ? FOR UPDATE",
+  await withTransaction(async (client) => {
+    // FOR UPDATE holds the row until commit, so a callback and a webhook
+    // arriving together are serialized rather than both decrementing stock.
+    const { rows } = await client.query<{ id: number; user_id: number | null; status: string }>(
+      "SELECT id, user_id, status FROM orders WHERE razorpay_order_id = $1 FOR UPDATE",
       [razorpayOrderId],
     );
     if (rows.length === 0) throw ApiError.notFound("Order not found for payment.");
@@ -68,25 +77,28 @@ export async function markOrderPaid(
 
     if (order.status === "paid") return; // already processed → no-op
 
-    await conn.query(
-      "UPDATE orders SET status = 'paid', razorpay_payment_id = ?, razorpay_signature = ? WHERE id = ?",
+    await client.query(
+      `UPDATE orders
+          SET status = 'paid', razorpay_payment_id = $1, razorpay_signature = $2,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = $3`,
       [paymentId, signature, order.id],
     );
 
-    const [items] = await conn.query<any[]>(
-      "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+    const { rows: items } = await client.query<{ product_id: number | null; quantity: number }>(
+      "SELECT product_id, quantity FROM order_items WHERE order_id = $1",
       [order.id],
     );
     for (const it of items) {
       if (it.product_id == null) continue;
-      await conn.query(
-        "UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?",
+      await client.query(
+        "UPDATE products SET stock = GREATEST(stock - $1, 0) WHERE id = $2",
         [it.quantity, it.product_id],
       );
     }
 
     if (order.user_id != null) {
-      await conn.query("DELETE FROM cart WHERE user_id = ?", [order.user_id]);
+      await client.query("DELETE FROM cart WHERE user_id = $1", [order.user_id]);
     }
   });
 }

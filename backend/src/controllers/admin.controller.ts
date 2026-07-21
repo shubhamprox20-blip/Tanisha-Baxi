@@ -4,7 +4,7 @@ import { query } from "../db/pool.js";
 export async function getDashboard(_req: Request, res: Response): Promise<void> {
   const orders = await query(
     `SELECT o.id, o.client_email, o.amount, o.currency, o.status, o.created_at AS ordered_at,
-            GROUP_CONCAT(oi.product_name SEPARATOR ', ') AS product_name
+            STRING_AGG(oi.product_name, ', ') AS product_name
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
       GROUP BY o.id
@@ -19,7 +19,7 @@ export async function getDashboard(_req: Request, res: Response): Promise<void> 
 
   // Revenue counts only successfully paid orders (amount is in paise).
   const [rev] = await query<{ total: number | null }>(
-    "SELECT SUM(amount) AS total FROM orders WHERE status = 'paid'",
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM orders WHERE status = 'paid'",
   );
   const [ordCount] = await query<{ n: number }>(
     "SELECT COUNT(*) AS n FROM orders WHERE status = 'paid'",
@@ -42,7 +42,7 @@ export async function getClients(_req: Request, res: Response): Promise<void> {
   const clients = await query(
     `SELECT client_email,
             COUNT(id)       AS total_orders,
-            ROUND(SUM(amount) / 100) AS ltv,
+            ROUND(SUM(amount)::numeric / 100) AS ltv,
             MAX(created_at) AS last_active
        FROM orders
       WHERE status = 'paid'

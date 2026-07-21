@@ -7,7 +7,7 @@ async function main(): Promise<void> {
     await assertDbConnection();
     console.log("[db] connected.");
   } catch (err) {
-    console.error("[db] connection failed — check DB_* env vars:", (err as Error).message);
+    console.error("[db] connection failed — check DATABASE_URL:", (err as Error).message);
     process.exit(1);
   }
 

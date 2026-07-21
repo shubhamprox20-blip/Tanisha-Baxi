@@ -24,17 +24,18 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     throw new ApiError(502, desc ? `Payment gateway error: ${desc}` : "Could not reach the payment gateway. Please try again.");
   }
 
-  await withTransaction(async (conn) => {
-    const [result] = await conn.query<any>(
+  await withTransaction(async (client) => {
+    const { rows } = await client.query<{ id: number }>(
       `INSERT INTO orders (user_id, client_email, amount, currency, status, razorpay_order_id)
-       VALUES (?, ?, ?, 'INR', 'pending', ?)`,
+       VALUES ($1, $2, $3, 'INR', 'pending', $4)
+       RETURNING id`,
       [userId, email, amount, rzpOrder.id],
     );
-    const orderId = result.insertId;
+    const orderId = rows[0].id;
     for (const it of items) {
-      await conn.query(
+      await client.query(
         `INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity)
-         VALUES (?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5)`,
         [orderId, it.product_id, it.product_name, it.unit_price, it.quantity],
       );
     }
@@ -99,10 +100,10 @@ export async function listMyOrders(req: Request, res: Response): Promise<void> {
   const userId = req.user!.sub;
   const orders = await query(
     `SELECT o.id, o.amount, o.currency, o.status, o.created_at AS ordered_at,
-            GROUP_CONCAT(oi.product_name SEPARATOR ', ') AS product_name
+            STRING_AGG(oi.product_name, ', ') AS product_name
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
-      WHERE o.user_id = ?
+      WHERE o.user_id = $1
       GROUP BY o.id
       ORDER BY o.id DESC`,
     [userId],

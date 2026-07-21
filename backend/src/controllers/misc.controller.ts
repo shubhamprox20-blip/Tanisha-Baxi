@@ -7,7 +7,7 @@ export async function createAppointment(req: Request, res: Response): Promise<vo
     client_name: string; consultation_type: string; appointment_date: string;
   };
   await execute(
-    "INSERT INTO appointments (client_name, consultation_type, appointment_date) VALUES (?, ?, ?)",
+    "INSERT INTO appointments (client_name, consultation_type, appointment_date) VALUES ($1, $2, $3)",
     [client_name, consultation_type, appointment_date],
   );
   res.json({ status: "success", message: `Appointment booked for ${client_name}.` });
@@ -15,7 +15,10 @@ export async function createAppointment(req: Request, res: Response): Promise<vo
 
 export async function subscribeNewsletter(req: Request, res: Response): Promise<void> {
   const { email } = req.body as { email: string };
-  await execute("INSERT IGNORE INTO newsletter_subscribers (email) VALUES (?)", [email]);
+  await execute(
+    "INSERT INTO newsletter_subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING",
+    [email],
+  );
   res.json({ status: "success", message: "Thank you for subscribing to Tanesha Baxi news." });
 }
 
@@ -33,10 +36,10 @@ export async function trackOrder(req: Request, res: Response): Promise<void> {
 
   const rows = await query(
     `SELECT o.id, o.amount, o.currency, o.status, o.created_at AS ordered_at,
-            GROUP_CONCAT(oi.product_name SEPARATOR ', ') AS product_name
+            STRING_AGG(oi.product_name, ', ') AS product_name
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
-      WHERE o.id = ? AND LOWER(o.client_email) = LOWER(?)
+      WHERE o.id = $1 AND LOWER(o.client_email) = LOWER($2)
       GROUP BY o.id`,
     [dbId, email],
   );

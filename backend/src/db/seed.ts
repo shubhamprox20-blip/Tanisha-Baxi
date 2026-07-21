@@ -21,11 +21,11 @@ const PRODUCTS = [
 const DEFAULT_STOCK = 10;
 
 async function seedProducts(): Promise<void> {
-  const existing = await query(
-    "SELECT COUNT(*)::text AS count FROM products"
+  const existing = await query<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM products"
   );
 
-  if (Number(existing[0].count) > 0) {
+  if (existing[0].count > 0) {
     console.log(
       `[seed] products table already has ${existing[0].count} rows — skipping product seed.`
     );
@@ -49,6 +49,13 @@ async function seedProducts(): Promise<void> {
       ]
     );
   }
+
+  // The rows above carry explicit ids, which leaves the SERIAL sequence parked
+  // at 1 — the next admin-created product would collide on the primary key.
+  // Fast-forward the sequence past the seeded ids.
+  await execute(
+    "SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT MAX(id) FROM products))"
+  );
 
   console.log(`[seed] inserted ${PRODUCTS.length} products.`);
 }

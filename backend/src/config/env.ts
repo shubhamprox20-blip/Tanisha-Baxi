@@ -32,15 +32,11 @@ export const env = {
   jwtExpiresIn: optional("JWT_EXPIRES_IN", "7d"),
   cookieSecure: optional("COOKIE_SECURE", isProd ? "true" : "false") === "true",
 
-  // db: {
-  //   host: optional("DB_HOST", "localhost"),
-  //   port: Number(optional("DB_PORT", "3306")),
-  //   user: required("DB_USER"),
-  //   password: optional("DB_PASSWORD", ""),
-  //   database: required("DB_NAME"),
-  //   connectionLimit: Number(optional("DB_CONNECTION_LIMIT", "10")),
-  // },
+  // Postgres connection string (Neon: copy the pooled "-pooler" URL).
   databaseUrl: required("DATABASE_URL"),
+  // Only set false if the provider's TLS certificate fails verification.
+  dbSslRejectUnauthorized: optional("DB_SSL_REJECT_UNAUTHORIZED", "true") === "true",
+  dbPoolMax: Number(optional("DB_POOL_MAX", "10")),
 
   razorpay: {
     keyId: optional("RAZORPAY_KEY_ID", ""),

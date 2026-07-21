@@ -46,8 +46,8 @@ tanishkabaxi/
 - **Backend:** Express (TypeScript) with a layered structure — `routes/`, `controllers/`,
   `services/`, `middleware/`, `db/`. Central error-handling middleware; every route wrapped
   so failures return consistent `{status, message}` JSON with correct HTTP codes.
-- **DB:** **cPanel MySQL** (created from the GoDaddy hosting dashboard), accessed via
-  `mysql2` with a connection pool and SQL migration files. Proper schema replaces the
+- **DB:** **Neon PostgreSQL** (managed; was cPanel MySQL — see "Revision" below), accessed
+  via `pg` with a connection pool and SQL migration files. Proper schema replaces the
   ad-hoc SQLite. Add missing columns/tables: product `stock`, `orders.user_id` +
   `razorpay_order_id` + `razorpay_payment_id` + `amount` + `currency` + `status`,
   and an `order_items` line-item table.
@@ -67,7 +67,7 @@ tanishkabaxi/
 - `.gitignore` for `.env`, `node_modules`, build output, `*.db`.
 
 ### Phase 1 — Backend core
-- MySQL layer (`mysql2` pool) + schema/migrations + seed (12 products from `setup_db.js`, an admin user with a hashed password).
+- Postgres layer (`pg` pool) + schema/migrations + seed (12 products from `setup_db.js`, an admin user with a hashed password).
 - Auth: register/login/logout/me with bcrypt + cookie session; input validation (zod).
 - `requireAuth` / `requireAdmin` middleware; central error handler; request logging (morgan/pino); helmet + CORS locked to the site origin with credentials.
 - Rate-limit auth + payment endpoints.
@@ -92,15 +92,14 @@ tanishkabaxi/
 - Wire auth modal, cart/favorites drawers, product page + Three.js, admin pages.
 - Razorpay Checkout script integration on the client.
 
-### Phase 5 — Hardening & deploy (stay on GoDaddy cPanel)
+### Phase 5 — Hardening & deploy *(revised: split hosting — see "Revision" below)*
 - Security headers, HTTPS-only cookies, rotate secrets, remove leaked keys.
-- **Frontend:** `vite build` → upload static `dist/` to cPanel `public_html` (or a subdomain).
-- **Backend:** deploy Express via cPanel **"Setup Node.js App" (Passenger)** on the same
-  hosting, with env vars set in the Node app UI and the API mounted under `/api`
-  (reverse-proxied / app-root path). MySQL connects over localhost within cPanel.
-  *Fallback:* if the client's specific GoDaddy plan lacks the Node.js selector, host the
-  Express API on a small external Node host and point the frontend's API base URL at it —
-  document this switch as a single env var (`VITE_API_BASE`).
+- **Frontend:** `vite build` → upload static `dist/` to cPanel `public_html` (or a subdomain),
+  built with `VITE_API_BASE` pointing at the Render API.
+- **Backend:** deploy Express to **Render** from the root `render.yaml` blueprint, with
+  secrets set in the Render dashboard. Cross-origin session cookies work via
+  `SameSite=None; Secure` + CORS locked to `CLIENT_ORIGIN`.
+- **DB:** **Neon** Postgres; migrate/seed driven locally against the Neon URL.
 - Smoke-test full flow end-to-end on the live host (including the Razorpay webhook URL).
 
 ---
@@ -120,13 +119,46 @@ tanishkabaxi/
   marquee, drawers, 3D product) before deleting old files.
 
 ## Decisions (locked)
-- **Database:** cPanel MySQL (`mysql2` + migrations).
+- **Database:** ~~cPanel MySQL~~ → **Neon (PostgreSQL)** via `pg` + migrations. *(revised — see below)*
 - **Scope:** full rebuild in one effort — storefront + product + profile + auth +
   payments **and** admin/inventory/clients dashboards.
-- **Hosting:** stay on the client's GoDaddy cPanel; primary target is cPanel Node.js App
-  (Passenger) for Express, with a documented external-host fallback if the plan lacks it.
+- **Hosting:** ~~single-host GoDaddy cPanel~~ → **split**: static frontend on cPanel,
+  Express API on **Render**, database on Neon. *(revised — see below)*
 
-## First thing to confirm at build time
+## Revision — hosting & database (2026-07)
+
+The runtime unknown flagged below resolved **negatively**: the client's GoDaddy plan does
+not usably expose cPanel "Setup Node.js App", and the alternative — hand-installing Node
+on the box — is not maintainable. The documented external-host fallback is therefore the
+real plan, not a contingency.
+
+That decision cascaded into the database. With the API off cPanel, keeping MySQL on cPanel
+would mean exposing it over Remote MySQL and whitelisting IPs. A managed DB the API can
+simply reach is both simpler and safer, and **Neon** is Postgres-only — so the backend
+moved from `mysql2`/MySQL to `pg`/PostgreSQL.
+
+**What that migration touched:**
+- `mysql2` pool → `pg` `Pool`; `?` placeholders → `$1, $2, …` throughout.
+- `insertId` → `RETURNING id`; `affectedRows` → `rowCount`.
+- `ON DUPLICATE KEY UPDATE … VALUES(x)` → `ON CONFLICT (…) DO UPDATE … EXCLUDED.x`.
+- `INSERT IGNORE` → `ON CONFLICT DO NOTHING`.
+- `GROUP_CONCAT(x SEPARATOR ', ')` → `STRING_AGG(x, ', ')`.
+- MySQL `ENUM` columns → Postgres `CREATE TYPE … AS ENUM`; `AUTO_INCREMENT` → `SERIAL`.
+- Error mapping `ER_DUP_ENTRY` → SQLSTATE `23505` / `23503`.
+- `int8`/`numeric` type parsers registered, because `pg` returns aggregates as strings.
+- Migration `002` fixes the `SERIAL` sequences, which the explicit-id product seed left
+  parked at 1 (the next admin-created product would have collided on the primary key).
+
+**Free-tier caveat carried into DEPLOY.md:** Render's free plan has no persistent disk, so
+admin-uploaded product images do not survive a redeploy. The seeded catalogue is unaffected
+(its `img` values are gradient presets, not files). Resolve by using the presets, adding a
+paid disk, or moving uploads to an object store.
+
+*Still open:* if Render's free tier proves too limiting, the API can move hosts with no code
+change — only `VITE_API_BASE` is repointed. The database stays on Neon regardless; a return
+to cPanel would require it to offer PostgreSQL.
+
+## First thing to confirm at build time *(resolved — see revision above)*
 Whether the client's GoDaddy plan exposes cPanel **"Setup Node.js App"** — this is the one
 runtime unknown. If present, single-host deploy; if not, use the external-API fallback
 above. Everything else in this plan is unaffected by that outcome.

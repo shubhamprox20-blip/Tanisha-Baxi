@@ -5,7 +5,7 @@ Productionized full-stack rebuild of the Tanesha Baxi storefront.
 - **`frontend/`** — React + Vite SPA. A pixel-faithful port of the original design
   (the finalized CSS is preserved verbatim per page and loaded only while that page is
   mounted). Storefront, product detail, profile, and the admin dashboard/inventory/clients.
-- **`backend/`** — Express + TypeScript API on **MySQL** (`mysql2`). Real cookie-session
+- **`backend/`** — Express + TypeScript API on **PostgreSQL** (`pg`). Real cookie-session
   auth (bcrypt + JWT), role-based admin access, Zod validation, central error handling,
   helmet/CORS/rate-limiting, and a correct Razorpay order + webhook flow.
 
@@ -14,18 +14,19 @@ kept for reference only and should be removed once the new stack is verified in 
 
 ## Local development
 
-Prerequisites: Node 18+, and a MySQL 8 instance (local, Docker, or remote cPanel).
+Prerequisites: Node 18+, and a PostgreSQL 15+ database — either a free
+[Neon](https://neon.tech) project (easiest; same as production) or a local instance.
 
 ```bash
-# 1. Database — e.g. via Docker
-docker run -d --name tanesha-mysql \
-  -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=tanesha_shop \
-  -e MYSQL_USER=tanesha_app -e MYSQL_PASSWORD=apppw \
-  -p 3307:3306 mysql:8.0
+# 1. Database — a Neon project, or locally via Docker
+docker run -d --name tanesha-pg \
+  -e POSTGRES_PASSWORD=apppw -e POSTGRES_USER=tanesha_app \
+  -e POSTGRES_DB=tanesha_shop \
+  -p 5433:5432 postgres:16
 
 # 2. Backend
 cd backend
-cp .env.example .env          # fill DB_*, JWT_SECRET, RAZORPAY_* (test keys ok locally)
+cp .env.example .env          # fill DATABASE_URL, JWT_SECRET, RAZORPAY_* (test keys ok locally)
 npm install
 npm run migrate               # create the schema
 npm run seed                  # 12 products + an admin (from SEED_ADMIN_* in .env)
@@ -43,13 +44,18 @@ Open http://localhost:5173. Sign in with the seeded admin to reach `/admin`, `/i
 
 ## Scripts
 
-**backend:** `dev`, `build`, `start`, `migrate`, `seed`, `typecheck`, `lint`, `test`
+**backend:** `dev`, `build`, `start`, `migrate`, `seed`, `migrate:prod`, `seed:prod`,
+`typecheck`, `lint`, `test`
 **frontend:** `dev`, `build`, `preview`, `typecheck`
+
+The `:prod` variants run the compiled `dist/` build instead of `tsx`, for environments
+without devDependencies.
 
 ## Deployment
 
-See [DEPLOY.md](DEPLOY.md) for the cPanel/GoDaddy deployment guide (MySQL setup, the
-"Setup Node.js App" path, the external-host fallback, and the Razorpay webhook config).
+Static frontend on GoDaddy cPanel, Express API on **Render**, database on **Neon**
+(Postgres). See [DEPLOY.md](DEPLOY.md) for the full guide, including the Razorpay webhook
+config and Render's free-tier caveats.
 
 ## Security notes
 

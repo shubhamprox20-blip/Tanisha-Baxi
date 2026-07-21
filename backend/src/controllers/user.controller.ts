@@ -10,18 +10,18 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
   const userId = req.user!.sub;
 
   const rows = await query<Record<string, unknown>>(
-    `SELECT ${PROFILE_COLUMNS} FROM users WHERE id = ?`,
+    `SELECT ${PROFILE_COLUMNS} FROM users WHERE id = $1`,
     [userId],
   );
   const user = rows[0];
   if (!user) throw ApiError.notFound("User not found");
 
   const [orders] = await query<{ n: number }>(
-    "SELECT COUNT(*) AS n FROM orders WHERE user_id = ? AND status = 'paid'",
+    "SELECT COUNT(*) AS n FROM orders WHERE user_id = $1 AND status = 'paid'",
     [userId],
   );
   const [wishlist] = await query<{ n: number }>(
-    "SELECT COUNT(*) AS n FROM favorites WHERE user_id = ?",
+    "SELECT COUNT(*) AS n FROM favorites WHERE user_id = $1",
     [userId],
   );
 
@@ -37,16 +37,16 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
 
   // Email is changing? ensure it's not taken by someone else.
   const clash = await query<{ id: number }>(
-    "SELECT id FROM users WHERE email = ? AND id <> ?",
+    "SELECT id FROM users WHERE email = $1 AND id <> $2",
     [b.email, userId],
   );
   if (clash.length > 0) throw ApiError.conflict("That email is already in use.");
 
   await execute(
     `UPDATE users SET
-       first_name = ?, last_name = ?, email = ?, phone = ?, house = ?, street = ?,
-       landmark = ?, city = ?, state = ?, pincode = ?, country = ?
-     WHERE id = ?`,
+       first_name = $1, last_name = $2, email = $3, phone = $4, house = $5, street = $6,
+       landmark = $7, city = $8, state = $9, pincode = $10, country = $11
+     WHERE id = $12`,
     [b.first_name, b.last_name, b.email, b.phone, b.house, b.street, b.landmark || null,
      b.city, b.state, b.pincode, b.country || "India", userId],
   );
@@ -56,7 +56,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
       throw ApiError.badRequest("Passwords do not match");
     }
     const hash = await hashPassword(b.new_password);
-    await execute("UPDATE users SET password_hash = ? WHERE id = ?", [hash, userId]);
+    await execute("UPDATE users SET password_hash = $1 WHERE id = $2", [hash, userId]);
   }
 
   res.json({ status: "success", message: "Profile Updated" });

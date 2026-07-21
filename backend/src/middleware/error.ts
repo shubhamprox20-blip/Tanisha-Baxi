@@ -25,10 +25,16 @@ export function errorHandler(
     return;
   }
 
-  // Duplicate-key and similar MySQL errors → 409 without leaking internals.
+  // Postgres constraint violations (SQLSTATE) → a clean 4xx, no internals leaked.
   const code = (err as { code?: string })?.code;
-  if (code === "ER_DUP_ENTRY") {
+  if (code === "23505") {
+    // unique_violation
     res.status(409).json({ status: "error", message: "That record already exists." });
+    return;
+  }
+  if (code === "23503") {
+    // foreign_key_violation — e.g. referencing a product that no longer exists
+    res.status(400).json({ status: "error", message: "Referenced record does not exist." });
     return;
   }
 

@@ -1,7 +1,15 @@
 -- Tanesha Baxi — initial schema (PostgreSQL / Neon)
 
-CREATE TYPE user_role AS ENUM ('customer', 'admin');
-CREATE TYPE order_status AS ENUM ('pending', 'paid', 'failed', 'cancelled');
+-- CREATE TYPE has no IF NOT EXISTS, so guard it to keep this file re-runnable.
+DO $$ BEGIN
+  CREATE TYPE user_role AS ENUM ('customer', 'admin');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE order_status AS ENUM ('pending', 'paid', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -93,3 +101,11 @@ CREATE TABLE IF NOT EXISTS traffic (
   unique_visitors INTEGER NOT NULL,
   page_views INTEGER NOT NULL
 );
+
+-- Lookup indexes for the hot paths: cart/favorites drawers, profile orders,
+-- the admin dashboard join, and the webhook's order lookup.
+CREATE INDEX IF NOT EXISTS idx_cart_user ON cart (user_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites (user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
