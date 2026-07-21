@@ -32,14 +32,15 @@ export const env = {
   jwtExpiresIn: optional("JWT_EXPIRES_IN", "7d"),
   cookieSecure: optional("COOKIE_SECURE", isProd ? "true" : "false") === "true",
 
-  db: {
-    host: optional("DB_HOST", "localhost"),
-    port: Number(optional("DB_PORT", "3306")),
-    user: required("DB_USER"),
-    password: optional("DB_PASSWORD", ""),
-    database: required("DB_NAME"),
-    connectionLimit: Number(optional("DB_CONNECTION_LIMIT", "10")),
-  },
+  // db: {
+  //   host: optional("DB_HOST", "localhost"),
+  //   port: Number(optional("DB_PORT", "3306")),
+  //   user: required("DB_USER"),
+  //   password: optional("DB_PASSWORD", ""),
+  //   database: required("DB_NAME"),
+  //   connectionLimit: Number(optional("DB_CONNECTION_LIMIT", "10")),
+  // },
+  databaseUrl: required("DATABASE_URL"),
 
   razorpay: {
     keyId: optional("RAZORPAY_KEY_ID", ""),

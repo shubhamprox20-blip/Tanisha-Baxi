@@ -21,50 +21,108 @@ const PRODUCTS = [
 const DEFAULT_STOCK = 10;
 
 async function seedProducts(): Promise<void> {
-  const existing = await query<{ n: number }>("SELECT COUNT(*) AS n FROM products");
-  if (existing[0].n > 0) {
-    console.log(`[seed] products table already has ${existing[0].n} rows — skipping product seed.`);
+  const existing = await query(
+    "SELECT COUNT(*)::text AS count FROM products"
+  );
+
+  if (Number(existing[0].count) > 0) {
+    console.log(
+      `[seed] products table already has ${existing[0].count} rows — skipping product seed.`
+    );
     return;
   }
+
   for (const p of PRODUCTS) {
     await execute(
-      `INSERT INTO products (id, name, meta, description, price, filters, img, stock)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [p.id, p.name, p.meta, p.desc, p.price, p.filters, p.img, DEFAULT_STOCK],
+      `INSERT INTO products
+      (id, name, meta, description, price, filters, img, stock)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [
+        p.id,
+        p.name,
+        p.meta,
+        p.desc,
+        p.price,
+        p.filters,
+        p.img,
+        DEFAULT_STOCK,
+      ]
     );
   }
+
   console.log(`[seed] inserted ${PRODUCTS.length} products.`);
 }
 
 async function seedAdmin(): Promise<void> {
   const email = env.seed.adminEmail.toLowerCase();
-  const existing = await query<{ id: number }>("SELECT id FROM users WHERE email = ?", [email]);
+
+  const existing = await query(
+    "SELECT id FROM users WHERE email = $1",
+    [email]
+  );
+
   if (existing.length > 0) {
     console.log(`[seed] admin ${email} already exists — skipping.`);
     return;
   }
+
   const hash = await hashPassword(env.seed.adminPassword);
+
   await execute(
     `INSERT INTO users
-      (first_name, last_name, email, phone, password_hash, house, street, city, state, pincode, country, role)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin')`,
-    ["Tanesha", "Baxi", email, "0000000000", hash, "Atelier", "Studio", "Mumbai", "Maharashtra", "400001", "India"],
+    (
+      first_name,
+      last_name,
+      email,
+      phone,
+      password_hash,
+      house,
+      street,
+      city,
+      state,
+      pincode,
+      country,
+      role
+    )
+    VALUES
+    ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'admin')`,
+    [
+      "Tanesha",
+      "Baxi",
+      email,
+      "0000000000",
+      hash,
+      "Atelier",
+      "Studio",
+      "Mumbai",
+      "Maharashtra",
+      "400001",
+      "India",
+    ]
   );
+
   console.log(`[seed] created admin user ${email}.`);
+
   if (env.seed.adminPassword === "change-me-strong") {
-    console.warn("[seed] WARNING: admin created with the default password. Change SEED_ADMIN_PASSWORD and reset it.");
+    console.warn(
+      "[seed] WARNING: admin created with the default password. Change SEED_ADMIN_PASSWORD and reset it."
+    );
   }
 }
 
 async function run(): Promise<void> {
   await seedProducts();
   await seedAdmin();
+
   await pool.end();
+
   console.log("[seed] done.");
 }
 
 run().catch(async (err) => {
   console.error("[seed] failed:", err);
+
   await pool.end().catch(() => undefined);
+
   process.exit(1);
 });
