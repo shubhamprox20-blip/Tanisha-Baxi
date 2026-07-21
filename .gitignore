@@ -1,0 +1,26 @@
+# Dependencies & build output
+node_modules/
+dist/
+build/
+
+# Environment / secrets — never commit these
+.env
+.env.local
+**/.env
+!**/.env.example
+
+# Logs
+*.log
+
+# Uploads (runtime, per-environment)
+backend/uploads/
+
+# Local databases
+*.db
+*.sqlite
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
