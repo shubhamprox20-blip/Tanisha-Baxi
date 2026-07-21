@@ -3,7 +3,12 @@ import { env } from "../config/env.js";
 import { query, withTransaction } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
 import { getRazorpay, verifyCheckoutSignature, verifyWebhookSignature } from "../services/razorpay.js";
-import { markOrderPaid, resolveLineItems, totalPaise } from "../services/orders.js";
+import {
+  assertWithinPaymentLimit,
+  markOrderPaid,
+  resolveLineItems,
+  totalPaise,
+} from "../services/orders.js";
 
 /** Create a Razorpay order and a matching `pending` order row (+ line items). */
 export async function createOrder(req: Request, res: Response): Promise<void> {
@@ -13,6 +18,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
   const items = await resolveLineItems(userId, product_id);
   const amount = totalPaise(items);
+  assertWithinPaymentLimit(amount);
 
   const receipt = `TB-${userId}-${Date.now()}`;
   let rzpOrder: { id: string };

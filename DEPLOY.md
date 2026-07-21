@@ -153,6 +153,19 @@ succeeds but I'm logged out on the next page" — the cookie is rejected by CORS
    `SELECT … FOR UPDATE` so a webhook and an in-page callback arriving together
    cannot double-decrement. The in-page verify is just a fast confirmation.
 
+### The ₹5,00,000 per-order ceiling
+
+Razorpay refuses any single order above **₹5,00,000** (verified against the test
+API: 50000000 paise succeeds, 50000100 fails with *"Amount exceeds maximum
+amount allowed"*). This is not theoretical for a couture catalogue — the 12
+seeded products total ₹5,63,500, so a full cart breaches it.
+
+The API now checks this before calling Razorpay and returns a clear `400`
+instead of an opaque gateway error. If Razorpay raises the ceiling for this
+account, bump `RAZORPAY_MAX_ORDER_PAISE` to match. Amounts are always in paise:
+prices are stored in whole rupees and multiplied by 100 exactly once, in
+`totalPaise()`.
+
 > **Rotate the previously-committed keys.** The old root `.env` exposed a
 > Razorpay key pair in git history. Generate a fresh pair and use only those.
 

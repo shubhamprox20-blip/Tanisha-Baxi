@@ -1,3 +1,4 @@
+import { env } from "../config/env.js";
 import { query, withTransaction } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
 
@@ -51,8 +52,27 @@ export async function resolveLineItems(userId: number, productId?: number): Prom
   }));
 }
 
+/** Order total in paise. Prices are stored in whole rupees, so ×100 here. */
 export function totalPaise(items: LineItem[]): number {
   return items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0) * 100;
+}
+
+const inr = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+
+/**
+ * Reject an over-cap total before calling Razorpay. Without this the gateway
+ * returns a bare "Amount exceeds maximum amount allowed", which surfaces as a
+ * 502 and tells the buyer nothing about what to do. Couture pricing means a
+ * full cart genuinely clears the ₹5,00,000 ceiling.
+ */
+export function assertWithinPaymentLimit(amountPaise: number): void {
+  const cap = env.razorpay.maxOrderPaise;
+  if (amountPaise > cap) {
+    throw ApiError.badRequest(
+      `This order totals ${inr(amountPaise)}, above the ${inr(cap)} limit for a single payment. ` +
+        `Please check out in smaller batches, or contact us to arrange the purchase.`,
+    );
+  }
 }
 
 /**

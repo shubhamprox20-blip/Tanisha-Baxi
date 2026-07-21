@@ -42,6 +42,11 @@ export const env = {
     keyId: optional("RAZORPAY_KEY_ID", ""),
     keySecret: optional("RAZORPAY_KEY_SECRET", ""),
     webhookSecret: optional("RAZORPAY_WEBHOOK_SECRET", ""),
+    // Razorpay rejects a single order above ₹5,00,000 (verified against the
+    // test API: 50000000 paise succeeds, 50000100 returns "Amount exceeds
+    // maximum amount allowed"). Raise only if Razorpay lifts it for this
+    // account — the ceiling is per-account and per-method.
+    maxOrderPaise: Number(optional("RAZORPAY_MAX_ORDER_PAISE", "50000000")),
   },
 
   upload: {
