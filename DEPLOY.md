@@ -21,6 +21,7 @@ external host. Both are documented below.
 
 ---
 
+
 ## 1. Backend — primary path: cPanel "Setup Node.js App" (Passenger)
 
 > First confirm the plan has the **"Setup Node.js App"** icon in cPanel. If it is missing,
