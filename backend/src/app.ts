@@ -18,7 +18,7 @@ export function createApp() {
   // Behind cPanel/Passenger or any proxy, trust it so secure cookies & IPs work.
   app.set("trust proxy", 1);
 
-  app.use(helmet());
+app.use((helmet as any)()); 
     app.use(
     cors({
       origin: env.clientOrigin,
