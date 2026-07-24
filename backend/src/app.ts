@@ -17,14 +17,19 @@ export function createApp() {
   // Behind cPanel/Passenger or any proxy, trust it so secure cookies & IPs work.
   app.set("trust proxy", 1);
 
-app.use((helmet as any)()); 
-    app.use(
-    cors({
-      // allow requests from any origin
-      origin: "*",
-      credentials: true,
-    }),
-  );
+  // cors must run before helmet so its Access-Control-* headers are not
+  // overridden by helmet's Cross-Origin-Resource-Policy: same-origin default.
+  const corsOptions: cors.CorsOptions = {
+    origin: true,       // reflect the request's Origin — allows any origin
+    credentials: true,  // needed for httpOnly cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  };
+  app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions)); // handle preflight for all routes
+  app.use((helmet as any)({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }));
   app.use(morgan(env.isProd ? "combined" : "dev"));
 
   // Razorpay webhook must see the RAW body to verify its signature — mount it
