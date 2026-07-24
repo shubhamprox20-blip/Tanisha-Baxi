@@ -19,7 +19,7 @@ export function createApp() {
   app.set("trust proxy", 1);
 
   app.use(helmet());
-  app.use(
+    app.use(
     cors({
       origin: env.clientOrigin,
       credentials: true,

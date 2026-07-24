@@ -25,6 +25,22 @@ export function Home() {
   const { user, logout } = useAuth();
   const store = useStore();
   const toggleTheme = useThemeToggle();
+  const [theme, setTheme] = useState(
+  document.documentElement.getAttribute("data-theme") ?? "light"
+);
+
+useEffect(() => {
+  const observer = new MutationObserver(() => {
+    setTheme(document.documentElement.getAttribute("data-theme") ?? "light");
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+
+  return () => observer.disconnect();
+}, []);
   useStorefrontEffects(true);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -76,8 +92,18 @@ export function Home() {
       <div id="intro" role="dialog" aria-label="Tanesha Baxi intro">
         <div id="ibg" />
         <div id="ic">
-          <img id="mono" src="/assets/TB-01.png" alt="Tanesha Baxi Photo Logo" />
-          <div id="isub">"meet your finest self"</div>
+          <img
+  id="mono"
+  src={
+    theme === "dark"? "/assets/TB-02.png":"/assets/TB-01.png"}alt="Tanesha Baxi Photo Logo"/>
+          <div
+  id="isub"
+  style={{
+    color: theme === "dark" ? "#ffffff" : "#000000",
+  }}
+>
+  "meet your finest self"
+</div>
         </div>
         <div id="iline" />
       </div>
@@ -85,7 +111,12 @@ export function Home() {
       {/* NAV */}
       <header id="header">
         <a href="#" aria-label="Home" className="nbrand-wrap">
-          <img id="logoImg" className="nbrand-img" src="/assets/TB-04.png" alt="Tanesha Baxi" />
+          <img
+  id="logoImg"
+  className="nbrand-img"
+  src={theme === "dark" ? "/assets/TB-04.png" : "/assets/TB-05.png"}
+  alt="Tanesha Baxi"
+/>
           <span className="nbrand-text">TANESHA BAXI</span>
         </a>
         <div className="nact">
@@ -208,6 +239,7 @@ export function Home() {
               ) : (
                 visibleProducts.map((p, idx) => {
                   const info = getImageInfo(p.img);
+                  console.log("Image URL:", info.url);
                   const isFav = store.favoriteIds.has(p.id);
                   return (
                     <article className="pc reveal vis" data-c={p.filters.toLowerCase()} key={p.id} style={{ transitionDelay: `${0.05 * idx}s` }}>
@@ -335,7 +367,14 @@ export function Home() {
         <div className="wrap">
           <div className="fbar" />
           <div className="ftr">
-            <a href="#" aria-label="Home"><img id="footerLogo" className="fbrand-img" src="/assets/TB-02.png" alt="Tanesha Baxi" /></a>
+            <a href="#" aria-label="Home">
+  <img
+    id="footerLogo"
+    className="fbrand-img"
+    src={theme === "dark" ? "/assets/TB-02.png" : "/assets/TB-01.png"}
+    alt="Tanesha Baxi"
+  />
+</a>
             <nav className="flinks">
               <a href="#shop" className="flink">Collection</a>
               <a href="#founder" className="flink">Founder</a>
