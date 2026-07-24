@@ -50,8 +50,14 @@ export const env = {
   },
 
   upload: {
-    dir: optional("UPLOAD_DIR", "uploads"),
-    maxBytes: Number(optional("MAX_UPLOAD_BYTES", "5242880")),
+    // 4 MB — stays under Vercel's 4.5 MB serverless payload limit.
+    maxBytes: Number(optional("MAX_UPLOAD_BYTES", "4194304")),
+  },
+
+  cloudinary: {
+    cloudName: required("CLOUDINARY_CLOUD_NAME"),
+    apiKey: required("CLOUDINARY_API_KEY"),
+    apiSecret: required("CLOUDINARY_API_SECRET"),
   },
 
   seed: {

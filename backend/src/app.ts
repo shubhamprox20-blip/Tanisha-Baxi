@@ -1,4 +1,3 @@
-import path from "node:path";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -39,17 +38,6 @@ app.use((helmet as any)());
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use(generalLimiter);
-
-  // Admin-uploaded product images. Served under /uploads so it never collides
-  // with the frontend's own design assets at /assets. In dev the Vite proxy
-  // forwards /uploads here; in production see DEPLOY.md.
-  app.use(
-    "/uploads",
-    express.static(path.resolve(process.cwd(), env.upload.dir), {
-      fallthrough: true,
-      maxAge: "7d",
-    }),
-  );
 
   app.use("/api", router);
 

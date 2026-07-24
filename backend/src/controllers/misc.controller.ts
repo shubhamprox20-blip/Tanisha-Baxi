@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { execute, query } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
+import { uploadToCloudinary } from "../services/cloudinary.js";
 
 export async function createAppointment(req: Request, res: Response): Promise<void> {
   const { client_name, consultation_type, appointment_date } = req.body as {
@@ -50,8 +51,9 @@ export async function trackOrder(req: Request, res: Response): Promise<void> {
   res.json({ status: "success", data: rows[0] });
 }
 
-/** Multer has already saved the file; return its public URL. */
-export function uploadFile(req: Request, res: Response): void {
+/** Multer buffers the file; upload it to Cloudinary and return the CDN URL. */
+export async function uploadFile(req: Request, res: Response): Promise<void> {
   if (!req.file) throw ApiError.badRequest("No file uploaded");
-  res.json({ status: "success", url: `/uploads/${req.file.filename}` });
+  const url = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+  res.json({ status: "success", url });
 }
