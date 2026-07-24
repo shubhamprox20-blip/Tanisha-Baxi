@@ -21,7 +21,7 @@ app.use((helmet as any)());
     app.use(
     cors({
       // allow requests from any origin
-      origin: true,
+      origin: "*",
       credentials: true,
     }),
   );
