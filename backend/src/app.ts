@@ -52,3 +52,6 @@ export function createApp() {
 
   return app;
 }
+
+// Vercel serverless handler — must be a default export of the Express app instance.
+export default createApp();
