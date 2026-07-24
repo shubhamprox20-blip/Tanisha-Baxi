@@ -20,7 +20,8 @@ export function createApp() {
 app.use((helmet as any)()); 
     app.use(
     cors({
-      origin: env.clientOrigin,
+      // allow requests from any origin
+      origin: true,
       credentials: true,
     }),
   );
