@@ -103,16 +103,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const addToCart = useCallback((productId: number) => {
-    requireLogin(async () => {
-      try {
-        await api.post("/cart/add", { product_id: productId });
-        showToast("Added to cart.", "success");
-        await refreshCart();
-      } catch (e) {
-        showToast((e as Error).message, "error");
-      }
-    });
-  }, [requireLogin, refreshCart]);
+  if (!user) {
+    window.location.href = "/?openCart=1";
+    return;
+  }
+
+  (async () => {
+    try {
+      await api.post("/cart/add", { product_id: productId });
+      showToast("Added to cart.", "success");
+      await refreshCart();
+    } catch (e) {
+      showToast((e as Error).message, "error");
+    }
+  })();
+}, [user, refreshCart]);
 
   const removeFromCart = useCallback(async (productId: number) => {
     try {

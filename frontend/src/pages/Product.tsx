@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import productCss from "../styles/product.css?inline";
 import { usePageStyle } from "../hooks/usePageStyle";
 import { useThemeToggle } from "../hooks/useTheme";
@@ -15,7 +15,7 @@ export function Product() {
   const pid = params.get("id");
   const toggleTheme = useThemeToggle();
   const store = useStore();
-
+  const navigate = useNavigate();
   const [product, setProduct] = useState<ProductType | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "notfound" | "error" | "none">("loading");
   const [imgIndex, setImgIndex] = useState(0);
@@ -23,6 +23,8 @@ export function Product() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [themeVersion, setThemeVersion] = useState(0);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     if (!pid) { setState("none"); return; }
@@ -57,15 +59,45 @@ export function Product() {
   return (
     <>
       <header id="header">
-        <Link to="/" aria-label="Home" className="nbrand-wrap">
-          <img id="navLogo" className="nbrand-img" src={navLogo} alt="Tanesha Baxi" />
-          <span className="nbrand-text">TANESHA BAXI</span>
-        </Link>
-        <div className="nact" style={{ display: "flex", alignItems: "center" }}>
-          <Link to="/" className="npill"><span>Back to Collection</span></Link>
-          <button className="ibtn" onClick={onToggleTheme} aria-label="Toggle theme">◐</button>
-        </div>
-      </header>
+  <Link to="/" aria-label="Home" className="nbrand-wrap">
+    <img
+      id="navLogo"
+      className="nbrand-img"
+      src={navLogo}
+      alt="Tanesha Baxi"
+    />
+    <span className="nbrand-text">TANESHA BAXI</span>
+  </Link>
+
+  <div
+    className="nact"
+    style={{ display: "flex", alignItems: "center", gap: "12px" }}
+  >
+    <Link to="/" className="npill">
+      <span>Back to Collection</span>
+    </Link>
+
+    <button
+  className="cart-btn"
+  aria-label="Shopping Cart"
+  onClick={() => navigate("/?openCart=1")}
+>
+  🛒
+  {store.cartCount > 0 && (
+    <span className="cart-badge">
+      {store.cartCount}
+    </span>
+  )}
+</button>
+    <button
+      className="ibtn"
+      onClick={onToggleTheme}
+      aria-label="Toggle theme"
+    >
+      ◐
+    </button>
+  </div>
+</header>
 
       <div id="product-root">
         {state === "loading" && <div className="loader">Loading piece details...</div>}
@@ -78,7 +110,16 @@ export function Product() {
               <div className={`p-image-box ${boxClass}`}>
                 {images.length > 0 ? (
                   <>
-                    <img id="main-product-image" src={images[imgIndex]} alt={product.name} />
+                    <img
+  id="main-product-image"
+  src={images[imgIndex]}
+  alt={product.name}
+  onClick={() => {
+    setZoom(1);
+    setImageViewerOpen(true);
+  }}
+  style={{ cursor: "zoom-in" }}
+/>
                     {images.length > 1 && (
                       <>
                         <button className="p-nav-btn p-nav-prev" onClick={() => setImgIndex((i) => (i - 1 + images.length) % images.length)} aria-label="Previous image">‹</button>
@@ -151,6 +192,37 @@ export function Product() {
           <img src="/assets/sizechart.png" alt="Size Chart" />
         </div>
       </div>
+      {imageViewerOpen && (
+  <div
+    className="image-viewer"
+    onClick={() => setImageViewerOpen(false)}
+  >
+    <button
+      className="viewer-close"
+      onClick={() => setImageViewerOpen(false)}
+    >
+      ✕
+    </button>
+
+    <img
+      src={images[imgIndex]}
+      alt={product?.name ?? ""}
+      className="viewer-image"
+      style={{
+        transform: `scale(${zoom})`,
+      }}
+      onClick={(e) => e.stopPropagation()}
+      onWheel={(e) => {
+        e.preventDefault();
+
+        if (e.deltaY < 0)
+          setZoom((z) => Math.min(z + 0.2, 5));
+        else
+          setZoom((z) => Math.max(z - 0.2, 1));
+      }}
+    />
+  </div>
+)}
     </>
   );
 }

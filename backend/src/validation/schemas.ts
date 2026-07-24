@@ -6,14 +6,15 @@ export const registerSchema = z.object({
   first_name: trimmed(80),
   last_name: trimmed(80),
   email: z.string().trim().toLowerCase().email().max(190),
-  phone: trimmed(30),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
-  house: trimmed(120),
-  street: trimmed(190),
+
+  phone: z.string().trim().max(30).optional().default(""),
+  house: z.string().trim().max(120).optional().default(""),
+  street: z.string().trim().max(190).optional().default(""),
   landmark: z.string().trim().max(190).optional().default(""),
-  city: trimmed(120),
-  state: trimmed(120),
-  pincode: trimmed(20),
+  city: z.string().trim().max(120).optional().default(""),
+  state: z.string().trim().max(120).optional().default(""),
+  pincode: z.string().trim().max(20).optional().default(""),
   country: z.string().trim().max(80).optional().default("India"),
 });
 
