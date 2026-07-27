@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import homeCss from "../styles/home.css?inline";
 import { usePageStyle } from "../hooks/usePageStyle";
 import { useStorefrontEffects } from "../hooks/useStorefrontEffects";
@@ -24,6 +24,8 @@ export function Home() {
   usePageStyle(homeCss, "tb-home-style");
   const { user, logout } = useAuth();
   const store = useStore();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const toggleTheme = useThemeToggle();
   const [theme, setTheme] = useState(
   document.documentElement.getAttribute("data-theme") ?? "light"
@@ -49,6 +51,27 @@ useEffect(() => {
   const [userDropdown, setUserDropdown] = useState(false);
   const [modal, setModal] = useState<ModalName>(null);
   const [activeFilter, setActiveFilter] = useState("featured");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 700);
+
+useEffect(() => {
+  const onResize = () => setIsMobile(window.innerWidth <= 700);
+
+  window.addEventListener("resize", onResize);
+  return () => window.removeEventListener("resize", onResize);
+}, []);
+
+useEffect(() => {
+  if (searchParams.get("openCart") !== "1") return;
+
+  // Remove the query immediately so it doesn't trigger again
+  navigate("/", { replace: true });
+
+  if (user) {
+    setCartOpen(true);
+  } else {
+    store.openAuthModal();
+  }
+}, [searchParams, user, store, navigate]);
 
   // Close the user dropdown on any outside click.
   useEffect(() => {
@@ -123,12 +146,36 @@ useEffect(() => {
           <a href="#shop" className="npill"><span>Shop</span></a>
           <a href="#founder" className="npill"><span>Founder</span></a>
           <a href="#support" className="npill"><span>Support</span></a>
-          <button className="npill" onClick={() => { setCartOpen(false); setFavsOpen(true); }} aria-label="View Favourites">
-            <span>♡ Favourites (<span>{store.favCount}</span>)</span>
-          </button>
-          <button className="npill" onClick={() => { setFavsOpen(false); setCartOpen(true); }} aria-label="View Cart">
-            <span>🛒 Cart (<span>{store.cartCount}</span>)</span>
-          </button>
+         <button
+  className="npill"
+  onClick={() => {
+    setCartOpen(false);
+    setFavsOpen(true);
+  }}
+>
+  <span>
+    {isMobile ? (
+      <>♡ <span>{store.favCount}</span></>
+    ) : (
+      <>♡ Favourites (<span>{store.favCount}</span>)</>
+    )}
+  </span>
+</button>
+         <button
+  className="npill"
+  onClick={() => {
+    setFavsOpen(false);
+    setCartOpen(true);
+  }}
+>
+  <span>
+    {isMobile ? (
+      <>🛒 <span>{store.cartCount}</span></>
+    ) : (
+      <>🛒 Cart (<span>{store.cartCount}</span>)</>
+    )}
+  </span>
+</button>
           <div id="userMenu">
             <button className="npill" onClick={handleUserNav}>
               <span>👤</span>

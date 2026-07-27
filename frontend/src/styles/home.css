@@ -2055,67 +2055,112 @@
       }
     }
 
-    @media(max-width:700px) {
-      .pgrid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width:700px) {
 
-      .pc {
-        grid-column: auto;
-      }
+  .pgrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
 
-      .sgrid {
-        grid-template-columns: 1fr;
-      }
+  .pc {
+    grid-column: auto;
+  }
 
-      header {
-        padding: .75rem 1rem;
-      }
+  .pm {
+    aspect-ratio: 4/5;
+  }
 
-       #header .nact > a.npill{
-        display:none;
-    }
-      .ftr{
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:18px;
-        text-align:center;
-    }
+  .pc .pi {
+    padding: 10px;
+  }
 
-    .flinks{
-        display:flex;
-        justify-content:center;
-        flex-wrap:wrap;
-        gap:12px;
-    }
+  .pmeta {
+    font-size: 10px;
+    letter-spacing: .12em;
+  }
 
-    .fbrand-img{
-        height:48px;
-    }
+  .pname {
+    font-size: 14px;
+    line-height: 1.3;
+    margin-top: 4px;
+  }
 
-    .fcopy2{
-        text-align:center;
-        font-size:.72rem;
-    }
+  .pdesc {
+    display: none;
+  }
 
-      .statsbar {
-        grid-template-columns: 1fr 1fr;
-      }
+  .pprice {
+    font-size: 14px;
+    font-weight: 600;
+  }
 
-      .newsstrip {
-        flex-direction: column;
-      }
+  .prow {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
 
-      .newsform {
-        max-width: 100%;
-        width: 100%;
-      }
+  .pbtn {
+    width: 100%;
+    justify-content: center;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
 
-      .hside {
-        display: none;
-      }
-    }
+  .sgrid {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    padding: .75rem 1rem;
+  }
+
+  #header .nact > a.npill {
+    display: none;
+  }
+
+  .ftr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    text-align: center;
+  }
+
+  .flinks {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .fbrand-img {
+    height: 48px;
+  }
+
+  .fcopy2 {
+    text-align: center;
+    font-size: .72rem;
+  }
+
+  .statsbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .newsstrip {
+    flex-direction: column;
+  }
+
+  .newsform {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .hside {
+    display: none;
+  }
+  
+}
 
     /* ── MODALS ── */
     .tb-modal {
