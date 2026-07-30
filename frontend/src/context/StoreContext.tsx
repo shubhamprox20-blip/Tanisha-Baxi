@@ -1,6 +1,7 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { showToast } from "../lib/toast";
 import { loadRazorpayCheckout, type RazorpayOrderInfo } from "../lib/razorpay";
@@ -33,11 +34,11 @@ interface StoreContextValue {
   favoriteIds: Set<number>;
   cartCount: number;
   favCount: number;
-  addToCart: (productId: number) => void;
+  addToCart: (productId: number, size: string) => void;
   removeFromCart: (productId: number) => void;
   toggleFavorite: (productId: number) => void;
   /** Start Razorpay checkout. Pass a productId for "Buy now"; omit for the cart. */
-  checkout: (productId?: number) => void;
+  checkout: (productId?: number, size?: string) => void;
   refreshCart: () => Promise<void>;
   refreshFavorites: () => Promise<void>;
   // Auth modal control shared across the storefront.
@@ -50,6 +51,7 @@ const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user, refresh: refreshAuth } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [productsError, setProductsError] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -102,7 +104,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [user, openAuthModal]);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
-  const addToCart = useCallback((productId: number) => {
+  const addToCart = useCallback((productId: number, size: string) => {
   if (!user) {
     window.location.href = "/?openCart=1";
     return;
@@ -110,7 +112,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   (async () => {
     try {
-      await api.post("/cart/add", { product_id: productId });
+      await api.post("/cart/add", {
+    product_id: productId,
+    size,
+});
       showToast("Added to cart.", "success");
       await refreshCart();
     } catch (e) {
@@ -141,16 +146,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, [requireLogin, refreshFavorites, products]);
 
+
+  const checkProfileComplete = async () => {
+
+  try {
+
+    const res = await api.get("/profile");
+
+    const profile: any = res.data || {};
+
+    return Boolean(
+      profile.first_name &&
+      profile.phone &&
+      profile.house &&
+      profile.city &&
+      profile.state &&
+      profile.pincode
+    );
+
+  } catch {
+
+    return false;
+
+  }
+
+};
+
   // ── Checkout (Razorpay) ────────────────────────────────────────────────
-  const checkout = useCallback((productId?: number) => {
+  const checkout = useCallback(
+  (productId?: number, size: string = "XS") => {
     requireLogin(async () => {
-      if (!productId && cart.length === 0) return;
-      showToast("Initializing secure checkout...", "success");
+
+  const profileComplete = await checkProfileComplete();
+
+  if (!profileComplete) {
+
+    localStorage.setItem(
+      "pendingCheckout",
+      JSON.stringify({
+        productId,
+        size
+      })
+    );
+
+    showToast(
+      "Please complete your profile first.",
+      "error"
+    );
+
+    navigate("/profile");
+
+    return;
+  }
+
+
+  if (!productId && cart.length === 0) return;
+
+  showToast("Initializing secure checkout...", "success");
       try {
         const ok = await loadRazorpayCheckout();
         if (!ok) { showToast("Could not load payment gateway.", "error"); return; }
 
-        const order = (await api.post<RazorpayOrderInfo>("/orders", productId ? { product_id: productId } : undefined)) as unknown as RazorpayOrderInfo;
+        const body = productId
+  ? {
+      product_id: productId,
+      size,
+    }
+  : undefined;
+
+const order = (await api.post<RazorpayOrderInfo>(
+  "/orders",
+  body
+)) as unknown as RazorpayOrderInfo;
         const rzp = new (window as any).Razorpay({
           key: order.key_id,
           amount: order.amount,
@@ -180,7 +247,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         showToast((e as Error).message || "Checkout failed.", "error");
       }
     });
-  }, [requireLogin, cart, user, refreshCart]);
+  }, [requireLogin, cart, user, refreshCart, navigate]);
 
   const favoriteIds = useMemo(() => new Set(favorites.map((f) => f.id)), [favorites]);
   const cartCount = useMemo(() => cart.reduce((s, i) => s + (i.quantity || 1), 0), [cart]);

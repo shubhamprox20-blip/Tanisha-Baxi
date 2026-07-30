@@ -74,8 +74,10 @@ export const orderTrackSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  // Optional: order a single product directly ("Buy now"); otherwise the whole cart.
   product_id: z.coerce.number().int().positive().optional(),
+  size: z.enum(["XS", "S", "M", "L", "XL", "XXL", "XXXL"])
+         .optional()
+         .default("XS"),
 });
 
 export const verifyPaymentSchema = z.object({

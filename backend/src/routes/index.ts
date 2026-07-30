@@ -61,4 +61,5 @@ router.post("/upload", requireAdmin, uploadImage.single("file"), asyncHandler(mi
 // ── Admin ─────────────────────────────────────────────────────────────────
 router.get("/admin/dashboard", requireAdmin, asyncHandler(admin.getDashboard));
 router.get("/admin/clients", requireAdmin, asyncHandler(admin.getClients));
+router.get("/admin/clients/details", requireAdmin, asyncHandler(admin.getClientDetails));
 router.get("/admin/users", requireAdmin, asyncHandler(admin.getUsers));

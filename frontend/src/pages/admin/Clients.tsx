@@ -5,7 +5,37 @@ import { api } from "../../lib/api";
 import { AdminGate } from "../../components/admin/AdminGate";
 import { AdminNav } from "../../components/admin/AdminNav";
 
-interface Client { client_email: string; total_orders: number; ltv: number; last_active: string | null; }
+interface Order {
+  id: number;
+  amount: number;
+  status: string;
+  date: string;
+  product: {
+    name: string;
+    size: string;
+    quantity: number;
+    price: number;
+  };
+}
+
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+
+  address: {
+    house: string;
+    street: string;
+    landmark: string | null;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+
+  orders: Order[];
+}
 
 function getTier(ltv: number): { cls: string; label: string } {
   if (ltv > 100000) return { cls: "diamond", label: "💎 Diamond" };
@@ -28,21 +58,16 @@ function ClientsInner() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    api.get<Client[]>("/admin/clients")
+    api.get<Client[]>("/admin/clients/details")
       .then((r) => setClients((r.data as Client[]) ?? []))
       .catch(() => setError(true));
   }, []);
 
-  const counts = useMemo(() => {
-    const c = { diamond: 0, "gold-tier": 0, vip: 0, standard: 0 } as Record<string, number>;
-    (clients ?? []).forEach((cl) => { c[getTier(cl.ltv).cls] += 1; });
-    return c;
-  }, [clients]);
 
   if (error) return <div className="wrap"><div id="loader"><span style={{ color: "var(--cherry)" }}>Backend Connection Refused.</span> Ensure the API server is active.</div></div>;
   if (!clients) return <div className="wrap"><div id="loader">Retrieving Global Clientele Database...</div></div>;
 
-  const filtered = filter === "all" ? clients : clients.filter((c) => getTier(c.ltv).cls === filter);
+  const filtered = filter === "all" ? clients : clients;
 
   return (
     <div className="wrap">
@@ -58,49 +83,202 @@ function ClientsInner() {
           </div>
         </div>
 
-        <div className="metrics-bar">
-          <div className="mbcard"><div className="mbcard-label">Diamond Patrons</div><div className="mbcard-val">{counts.diamond}</div><div className="mbcard-sub">LTV &gt; ₹1,00,000</div></div>
-          <div className="mbcard"><div className="mbcard-label">Gold Atelier</div><div className="mbcard-val">{counts["gold-tier"]}</div><div className="mbcard-sub">LTV ₹50k – ₹1L</div></div>
-          <div className="mbcard"><div className="mbcard-label">VIP Patrons</div><div className="mbcard-val">{counts.vip}</div><div className="mbcard-sub">LTV ₹20k – ₹50k</div></div>
-          <div className="mbcard"><div className="mbcard-label">Standard Clients</div><div className="mbcard-val">{counts.standard}</div><div className="mbcard-sub">LTV &lt; ₹20,000</div></div>
-        </div>
+<div className="metrics-bar">
 
-        <div className="tier-filter">
-          {TIER_BTNS.map((t) => (
-            <button key={t.key} className={`tier-btn${filter === t.key ? " active" : ""}`} onClick={() => setFilter(t.key)}>{t.label}</button>
-          ))}
-        </div>
+  <div className="mbcard">
+    <div className="mbcard-label">
+      Total Clients
+    </div>
+
+    <div className="mbcard-val">
+      {clients.length}
+    </div>
+
+    <div className="mbcard-sub">
+      Registered Customers
+    </div>
+  </div>
+
+
+  <div className="mbcard">
+    <div className="mbcard-label">
+      Total Orders
+    </div>
+
+    <div className="mbcard-val">
+      {
+        clients.reduce(
+          (sum, c) => sum + c.orders.length,
+          0
+        )
+      }
+    </div>
+
+    <div className="mbcard-sub">
+      All Orders
+    </div>
+  </div>
+
+
+  <div className="mbcard">
+    <div className="mbcard-label">
+      Paid Orders
+    </div>
+
+    <div className="mbcard-val">
+      {
+        clients.reduce(
+          (sum, c) =>
+            sum +
+            c.orders.filter(
+              o => o.status === "paid"
+            ).length,
+          0
+        )
+      }
+    </div>
+
+    <div className="mbcard-sub">
+      Successful Payments
+    </div>
+  </div>
+
+
+  <div className="mbcard">
+    <div className="mbcard-label">
+      Revenue
+    </div>
+
+    <div className="mbcard-val">
+      ₹
+      {
+        clients.reduce(
+          (sum,c)=>
+            sum +
+            c.orders.reduce(
+              (s,o)=>s+o.amount,
+              0
+            ),
+          0
+        ).toLocaleString("en-IN")
+      }
+    </div>
+
+    <div className="mbcard-sub">
+      Lifetime Sales
+    </div>
+  </div>
+
+
+</div>
 
         <div className="client-grid">
-          {filtered.length === 0 ? (
-            <p style={{ gridColumn: "1/-1", textAlign: "center", padding: "3rem", color: "var(--mu)", fontStyle: "italic" }}>No clients in this tier.</p>
-          ) : (
-            filtered.map((c) => {
-              const tier = getTier(c.ltv);
-              const lastDate = c.last_active ? new Date(c.last_active).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" }) : "—";
-              return (
-                <div className="ccard" key={c.client_email} data-tier={tier.cls}>
-                  <div className="ccard-top">
-                    <div className="ccard-avatar">{c.client_email ? c.client_email.charAt(0).toUpperCase() : "?"}</div>
-                    <span className={`tier-badge ${tier.cls}`}>{tier.label}</span>
+
+          {
+            clients.map((c) => (
+              <div className="ccard" key={c.id}>
+
+                <div className="ccard-top">
+
+                  <div className="ccard-avatar">
+                    {c.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="ccard-email">{c.client_email}</div>
-                  <div className="ccard-orders">{c.total_orders} piece{c.total_orders !== 1 ? "s" : ""} commissioned</div>
-                  <div className="ccard-divider" />
-                  <div className="ccard-stats">
-                    <div>
-                      <div className="ccard-stat-label">Lifetime Value</div>
-                      <div className="ccard-stat-val highlight">₹{c.ltv.toLocaleString("en-IN")}</div>
-                    </div>
-                    <div>
-                      <div className="ccard-stat-label">Last Active</div>
-                      <div className="ccard-stat-val">{lastDate}</div>
-                    </div>
-                  </div>
+
                 </div>
-              );
-            })
-          )}
+
+
+                <h2>{c.name}</h2>
+
+                <p>{c.email}</p>
+
+                <p>
+                  📞 {c.phone}
+                </p>
+
+
+                <hr />
+
+
+                <h3>Address</h3>
+
+                <p>
+                  {c.address.house},
+                  {c.address.street}
+                </p>
+
+                <p>
+                  {c.address.city}, {c.address.state}
+                </p>
+
+                <p>
+                  {c.address.pincode}, {c.address.country}
+                </p>
+
+
+                <hr />
+
+
+                <h3>
+                  Orders ({c.orders.length})
+                </h3>
+
+
+                {
+                  c.orders.length === 0 ?
+
+                    <p>No orders yet</p>
+
+                    :
+
+                    c.orders.map((o) => (
+
+                      <div className="order-box" key={o.id}>
+
+
+                        <strong>
+                          Order #{o.id}
+                        </strong>
+
+
+                        <p>
+                          Product: {o.product.name}
+                        </p>
+
+
+                        <p>
+                          Size: {o.product.size}
+                        </p>
+
+
+                        <p>
+                          Quantity: {o.product.quantity}
+                        </p>
+
+
+                        <p>
+                          Amount:
+₹{(o.amount / 100).toLocaleString("en-IN")}
+                        </p>
+
+
+                        <p>
+                          Status:
+                          {o.status}
+                        </p>
+
+
+                      </div>
+
+                    ))
+
+                }
+
+
+              </div>
+            ))
+
+          }
+
         </div>
       </div>
     </div>

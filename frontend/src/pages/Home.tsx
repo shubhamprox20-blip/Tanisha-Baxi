@@ -143,9 +143,9 @@ useEffect(() => {
           <span className="nbrand-text">TANESHA BAXI</span>
         </a>
         <div className="nact">
-          <a href="#shop" className="npill"><span>Shop</span></a>
+          {/* <a href="#shop" className="npill"><span>Shop</span></a>
           <a href="#founder" className="npill"><span>Founder</span></a>
-          <a href="#support" className="npill"><span>Support</span></a>
+          <a href="#support" className="npill"><span>Support</span></a> */}
          <button
   className="npill"
   onClick={() => {
@@ -184,7 +184,7 @@ useEffect(() => {
             </button>
             <div id="userDropdown" className={userDropdown ? "open" : ""}>
               <Link to="/profile">👤 My Profile</Link>
-              <Link to="/profile">📦 My Orders</Link>
+              <Link to="/orders">📦 My Orders</Link>
               <hr />
               <a href="#" onClick={(e) => { e.preventDefault(); void handleLogout(); }}>🚪 Logout</a>
             </div>
@@ -305,7 +305,7 @@ useEffect(() => {
                         <p className="pdesc">{p.description}</p>
                         <div className="prow">
                           <span className="pprice">₹{p.price.toLocaleString("en-IN")}</span>
-                          <button className="pbtn" onClick={(e) => { e.preventDefault(); store.addToCart(p.id); }}><span>Add to Cart</span></button>
+                          <button className="pbtn" onClick={(e) => { e.preventDefault(); store.addToCart(p.id, "M") }}><span>Add to Cart</span></button>
                         </div>
                       </div>
                     </article>

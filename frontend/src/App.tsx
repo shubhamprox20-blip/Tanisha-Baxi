@@ -6,6 +6,7 @@ import { AdminDashboard } from "./pages/admin/Dashboard";
 import { Inventory } from "./pages/admin/Inventory";
 import { Clients } from "./pages/admin/Clients";
 import { NotFound } from "./pages/NotFound";
+import { Orders } from "./pages/Orders";
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/clients" element={<Clients />} />
       <Route path="*" element={<NotFound />} />
+      <Route path="/orders" element={<Orders />} />
     </Routes>
   );
 }

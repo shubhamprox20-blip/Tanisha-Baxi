@@ -63,25 +63,19 @@ export function Profile() {
   return (
     <div className="profile-wrapper">
       <div className="profile-header">
-        <div className="profile-title">My Profile</div>
-      </div>
+  <button
+    className="back-btn"
+    onClick={() => navigate("/")}
+  >
+    ← Back
+  </button>
+
+  <div className="profile-title">My Profile</div>
+</div>
+
+      
 
       <div className="profile-grid">
-        <div className="profile-card">
-          <img id="profileImage" src="/assets/founder.png" className="avatar" alt="Profile" />
-          <div className="avatar-upload">
-            <input type="file" id="profilePic" onChange={() => showToast("Photo upload coming soon.")} />
-            <label htmlFor="profilePic">Change Photo</label>
-          </div>
-          <div className="name">{data.first_name || data.last_name ? `${data.first_name} ${data.last_name}`.trim() : "Loading..."}</div>
-          <div className="email">{data.email || "Loading..."}</div>
-          <div className="stats">
-            <div className="stat"><span>Orders</span><b>{data.orders ?? 0}</b></div>
-            <div className="stat"><span>Wishlist</span><b>{data.wishlist ?? 0}</b></div>
-            <div className="stat"><span>Joined</span><b>{joinDate}</b></div>
-          </div>
-        </div>
-
         <div className="profile-card">
           <div className="section">
             <h2>Personal Information</h2>

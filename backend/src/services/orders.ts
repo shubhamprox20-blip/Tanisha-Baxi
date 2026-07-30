@@ -7,6 +7,7 @@ export interface LineItem {
   product_name: string;
   unit_price: number; // rupees
   quantity: number;
+  size: string;
 }
 
 interface CartRow {
@@ -22,7 +23,7 @@ interface CartRow {
  * `productId` is given it's a single "Buy now"; otherwise the user's cart.
  * Prices and names always come from the products table — never the client.
  */
-export async function resolveLineItems(userId: number, productId?: number): Promise<LineItem[]> {
+export async function resolveLineItems(userId: number, productId?: number, size:string="XS"): Promise<LineItem[]> {
   if (productId) {
     const rows = await query<CartRow>(
       "SELECT id, name, price, stock FROM products WHERE id = $1",
@@ -31,7 +32,13 @@ export async function resolveLineItems(userId: number, productId?: number): Prom
     if (rows.length === 0) throw ApiError.notFound("Product not found");
     const p = rows[0];
     if (p.stock <= 0) throw ApiError.badRequest(`${p.name} is out of stock.`);
-    return [{ product_id: p.id, product_name: p.name, unit_price: p.price, quantity: 1 }];
+    return [{
+    product_id:p.id,
+    product_name:p.name,
+    unit_price:p.price,
+    quantity:1,
+    size
+}];
   }
 
   const rows = await query<CartRow>(
@@ -44,12 +51,13 @@ export async function resolveLineItems(userId: number, productId?: number): Prom
   for (const r of rows) {
     if (r.stock < r.quantity) throw ApiError.badRequest(`${r.name} has insufficient stock.`);
   }
-  return rows.map((r) => ({
-    product_id: r.id,
-    product_name: r.name,
-    unit_price: r.price,
-    quantity: r.quantity,
-  }));
+  return rows.map((r)=>({
+    product_id:r.id,
+    product_name:r.name,
+    unit_price:r.price,
+    quantity:r.quantity,
+    size
+}));
 }
 
 /** Order total in paise. Prices are stored in whole rupees, so ×100 here. */

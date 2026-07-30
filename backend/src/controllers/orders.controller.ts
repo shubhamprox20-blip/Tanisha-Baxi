@@ -14,9 +14,15 @@ import {
 export async function createOrder(req: Request, res: Response): Promise<void> {
   const userId = req.user!.sub;
   const email = req.user!.email;
-  const { product_id } = req.body as { product_id?: number };
+  const {
+  product_id,
+  size = "XS",
+} = req.body as {
+  product_id?: number;
+  size?: string;
+};
 
-  const items = await resolveLineItems(userId, product_id);
+  const items = await resolveLineItems(userId, product_id, size);
   const amount = totalPaise(items);
   assertWithinPaymentLimit(amount);
 
@@ -40,9 +46,9 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     const orderId = rows[0].id;
     for (const it of items) {
       await client.query(
-        `INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [orderId, it.product_id, it.product_name, it.unit_price, it.quantity],
+        `INSERT INTO order_items (order_id, product_id, product_name, size, unit_price, quantity)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [orderId, it.product_id, it.product_name, it.size, it.unit_price, it.quantity],
       );
     }
   });
@@ -104,15 +110,35 @@ export async function razorpayWebhook(req: Request, res: Response): Promise<void
 /** Orders belonging to the logged-in user (for the profile page). */
 export async function listMyOrders(req: Request, res: Response): Promise<void> {
   const userId = req.user!.sub;
+
   const orders = await query(
-    `SELECT o.id, o.amount, o.currency, o.status, o.created_at AS ordered_at,
-            STRING_AGG(oi.product_name, ', ') AS product_name
-       FROM orders o
-       LEFT JOIN order_items oi ON oi.order_id = o.id
+    `SELECT
+        o.id,
+        o.amount,
+        o.currency,
+        o.status,
+        o.created_at AS ordered_at,
+
+        oi.product_id,
+        oi.product_name,
+        oi.unit_price,
+        oi.quantity,
+
+        p.img,
+
+        (o.created_at + INTERVAL '5 days') AS expected_delivery
+
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+
       WHERE o.user_id = $1
-      GROUP BY o.id
-      ORDER BY o.id DESC`,
+      ORDER BY o.created_at DESC`,
     [userId],
   );
-  res.json({ status: "success", data: orders });
+
+  res.json({
+    status: "success",
+    data: orders,
+  });
 }

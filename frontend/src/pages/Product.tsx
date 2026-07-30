@@ -24,7 +24,7 @@ export function Product() {
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [themeVersion, setThemeVersion] = useState(0);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
-const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     if (!pid) { setState("none"); return; }
@@ -59,45 +59,46 @@ const [zoom, setZoom] = useState(1);
   return (
     <>
       <header id="header">
-  <Link to="/" aria-label="Home" className="nbrand-wrap">
-    <img
-      id="navLogo"
-      className="nbrand-img"
-      src={navLogo}
-      alt="Tanesha Baxi"
-    />
-    <span className="nbrand-text">TANESHA BAXI</span>
-  </Link>
+        <Link to="/" aria-label="Home" className="nbrand-wrap">
+          <img
+            id="navLogo"
+            className="nbrand-img"
+            src={navLogo}
+            alt="Tanesha Baxi"
+          />
+          <span className="nbrand-text">TANESHA BAXI</span>
+        </Link>
 
-  <div
-    className="nact"
-    style={{ display: "flex", alignItems: "center", gap: "12px" }}
-  >
-    <Link to="/" className="npill">
-      <span>Back to Collection</span>
-    </Link>
+        <div
+          className="nact"
+          style={{ display: "flex", alignItems: "center", gap: "12px" }}
+        >
+          <Link to="/" className="npill">
+  <span className="back-text">Back to Collection</span>
+  <span className="back-icon">←</span>
+</Link>
 
-    <button
-  className="cart-btn"
-  aria-label="Shopping Cart"
-  onClick={() => navigate("/?openCart=1")}
->
-  🛒
-  {store.cartCount > 0 && (
-    <span className="cart-badge">
-      {store.cartCount}
-    </span>
-  )}
-</button>
-    <button
-      className="ibtn"
-      onClick={onToggleTheme}
-      aria-label="Toggle theme"
-    >
-      ◐
-    </button>
-  </div>
-</header>
+          <button
+            className="cart-btn"
+            aria-label="Shopping Cart"
+            onClick={() => navigate("/?openCart=1")}
+          >
+            🛒
+            {store.cartCount > 0 && (
+              <span className="cart-badge">
+                {store.cartCount}
+              </span>
+            )}
+          </button>
+          <button
+            className="ibtn"
+            onClick={onToggleTheme}
+            aria-label="Toggle theme"
+          >
+            ◐
+          </button>
+        </div>
+      </header>
 
       <div id="product-root">
         {state === "loading" && <div className="loader">Loading piece details...</div>}
@@ -111,15 +112,15 @@ const [zoom, setZoom] = useState(1);
                 {images.length > 0 ? (
                   <>
                     <img
-  id="main-product-image"
-  src={images[imgIndex]}
-  alt={product.name}
-  onClick={() => {
-    setZoom(1);
-    setImageViewerOpen(true);
-  }}
-  style={{ cursor: "zoom-in" }}
-/>
+                      id="main-product-image"
+                      src={images[imgIndex]}
+                      alt={product.name}
+                      onClick={() => {
+                        setZoom(1);
+                        setImageViewerOpen(true);
+                      }}
+                      style={{ cursor: "zoom-in" }}
+                    />
                     {images.length > 1 && (
                       <>
                         <button className="p-nav-btn p-nav-prev" onClick={() => setImgIndex((i) => (i - 1 + images.length) % images.length)} aria-label="Previous image">‹</button>
@@ -156,12 +157,22 @@ const [zoom, setZoom] = useState(1);
                   <button key={s} type="button" className={`size-btn${size === s ? " active" : ""}`} onClick={() => setSize(s)}>{s}</button>
                 ))}
               </div>
+              
 
               <div className="p-price">₹{product.price.toLocaleString("en-IN")}</div>
 
               <div className="p-actions">
-                <button className="bgold" onClick={() => store.checkout(product.id)}>Buy Now</button>
-                <button className="bsec" onClick={() => store.addToCart(product.id)}>Add to Cart</button>
+                <button
+  className="bgold"
+  onClick={() => {
+    store.checkout(product.id, size);
+  }}
+>
+  Buy Now
+</button>
+                <button
+                  className="bsec"
+                  onClick={() => store.addToCart(product.id, size)}>Add to Cart</button>
                 <a href="#" className="bsec" onClick={(e) => { e.preventDefault(); setHelpOpen(true); }}>Consult Studio</a>
               </div>
             </div>
@@ -193,36 +204,36 @@ const [zoom, setZoom] = useState(1);
         </div>
       </div>
       {imageViewerOpen && (
-  <div
-    className="image-viewer"
-    onClick={() => setImageViewerOpen(false)}
-  >
-    <button
-      className="viewer-close"
-      onClick={() => setImageViewerOpen(false)}
-    >
-      ✕
-    </button>
+        <div
+          className="image-viewer"
+          onClick={() => setImageViewerOpen(false)}
+        >
+          <button
+            className="viewer-close"
+            onClick={() => setImageViewerOpen(false)}
+          >
+            ✕
+          </button>
 
-    <img
-      src={images[imgIndex]}
-      alt={product?.name ?? ""}
-      className="viewer-image"
-      style={{
-        transform: `scale(${zoom})`,
-      }}
-      onClick={(e) => e.stopPropagation()}
-      onWheel={(e) => {
-        e.preventDefault();
+          <img
+            src={images[imgIndex]}
+            alt={product?.name ?? ""}
+            className="viewer-image"
+            style={{
+              transform: `scale(${zoom})`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              e.preventDefault();
 
-        if (e.deltaY < 0)
-          setZoom((z) => Math.min(z + 0.2, 5));
-        else
-          setZoom((z) => Math.max(z - 0.2, 1));
-      }}
-    />
-  </div>
-)}
+              if (e.deltaY < 0)
+                setZoom((z) => Math.min(z + 0.2, 5));
+              else
+                setZoom((z) => Math.max(z - 0.2, 1));
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }

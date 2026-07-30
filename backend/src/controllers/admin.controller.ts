@@ -51,6 +51,125 @@ export async function getClients(_req: Request, res: Response): Promise<void> {
   );
   res.json({ status: "success", data: clients });
 }
+export async function getClientDetails(_req: Request, res: Response): Promise<void> {
+
+  const rows = await query(
+    `
+    SELECT
+      u.id,
+      u.first_name,
+      u.last_name,
+      u.email,
+      u.phone,
+
+      u.house,
+      u.street,
+      u.landmark,
+      u.city,
+      u.state,
+      u.pincode,
+      u.country,
+
+      o.id AS order_id,
+      o.amount,
+      o.status,
+      o.created_at,
+
+      oi.product_name,
+      oi.size,
+      oi.quantity,
+      oi.unit_price
+
+    FROM users u
+
+    LEFT JOIN orders o
+      ON o.user_id = u.id
+
+    LEFT JOIN order_items oi
+      ON oi.order_id = o.id
+
+    WHERE u.role = 'customer'
+
+    ORDER BY o.created_at DESC
+    `
+  );
+
+
+  const clients: Record<number, any> = {};
+
+
+  for (const row of rows as any[]) {
+
+    if (!clients[row.id]) {
+
+      clients[row.id] = {
+
+        id: row.id,
+
+        name:
+          `${row.first_name} ${row.last_name}`,
+
+        email: row.email,
+
+        phone: row.phone,
+
+
+        address: {
+          house: row.house,
+          street: row.street,
+          landmark: row.landmark,
+          city: row.city,
+          state: row.state,
+          pincode: row.pincode,
+          country: row.country,
+        },
+
+
+        orders: [],
+
+      };
+
+    }
+
+
+    if (row.order_id) {
+
+      clients[row.id].orders.push({
+
+        id: row.order_id,
+
+        amount: row.amount,
+
+        status: row.status,
+
+        date: row.created_at,
+
+
+        product: {
+
+          name: row.product_name,
+
+          size: row.size,
+
+          quantity: row.quantity,
+
+          price: row.unit_price,
+
+        },
+
+      });
+
+    }
+
+  }
+
+
+  res.json({
+    status: "success",
+    data: Object.values(clients),
+  });
+
+}
 
 export async function getUsers(_req: Request, res: Response): Promise<void> {
   // Note: password_hash is deliberately never selected.
