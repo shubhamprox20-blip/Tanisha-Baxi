@@ -87,7 +87,13 @@ export function Drawers({ cartOpen, favsOpen, onClose }: DrawersProps) {
                   </div>
                   <div className="drawer-item-actions">
                     <span className="drawer-item-remove" onClick={() => toggleFavorite(p.id)}>Remove</span>
-                    <span className="drawer-item-remove" style={{ color: "var(--gold)" }} onClick={() => addToCart(p.id)}>Add to Cart</span>
+                    <span 
+  className="drawer-item-remove" 
+  style={{ color: "var(--gold)" }} 
+  onClick={() => addToCart(p.id, "XS")}
+>
+  Add to Cart
+</span>
                   </div>
                 </div>
               );
