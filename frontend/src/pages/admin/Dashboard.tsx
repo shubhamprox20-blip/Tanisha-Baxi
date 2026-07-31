@@ -20,6 +20,7 @@ interface Dashboard {
 function DashboardInner() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -98,6 +99,51 @@ function DashboardInner() {
             </div>
           </div>
         </div>
+
+        <div
+  style={{
+    margin: "2rem 0",
+    padding: "1.5rem",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    background: "rgba(255,255,255,0.02)",
+  }}
+>
+  <h2 className="sec-head">Homepage Hero Image</h2>
+
+  <p style={{ color: "var(--mu)", marginBottom: "1rem" }}>
+    Upload a new homepage hero image. The previous image will be replaced automatically.
+  </p>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const form = new FormData();
+      form.append("file", file);
+
+      try {
+        setUploadingHero(true);
+
+        await api.post("/admin/upload-hero", form);
+
+        alert("Hero image updated successfully!");
+      } catch (err) {
+        console.error(err);
+        alert("Upload failed.");
+      } finally {
+        setUploadingHero(false);
+      }
+    }}
+  />
+
+  <div style={{ marginTop: "1rem" }}>
+    {uploadingHero ? "Uploading..." : ""}
+  </div>
+</div>
 
         <div className="users-card">
           <h2 style={{ margin: "3rem 0 1.5rem", fontFamily: "var(--fd)", fontWeight: 300, fontSize: "1.8rem" }}>Registered Users</h2>

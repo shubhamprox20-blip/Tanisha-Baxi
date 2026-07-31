@@ -226,7 +226,7 @@ useEffect(() => {
         {/* HERO */}
         <section id="hero">
           <div className="hero-img-wrap">
-            <img src="/assets/hero_cherry_gown.png" alt="Tanesha Baxi SS 2026 Collection" className="hero-img" />
+            <img src="https://res.cloudinary.com/zdxx02hz/image/upload/tanesha-baxi/hero.jpg" className="hero-img"/>
           </div>
           <div className="hi">
             <div className="kicker">Demi Couture · Finewear By Tanesha Baxi</div>

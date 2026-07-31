@@ -12,22 +12,37 @@ cloudinary.config({
 export async function uploadToCloudinary(
   buffer: Buffer,
   originalName: string,
+  hero = false,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const ext = originalName.split(".").pop() ?? "jpg";
+
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: "tanesha-baxi",
-        resource_type: "image",
-        format: ext,
-        use_filename: false,
-        unique_filename: true,
-      },
+      hero
+        ? {
+            folder: "tanesha-baxi",
+            public_id: "hero",
+            overwrite: true,
+            invalidate: true,
+            resource_type: "image",
+            format: ext,
+          }
+        : {
+            folder: "tanesha-baxi",
+            resource_type: "image",
+            format: ext,
+            use_filename: false,
+            unique_filename: true,
+          },
+
       (error, result) => {
-        if (error || !result) return reject(error ?? new Error("Cloudinary upload failed"));
+        if (error || !result)
+          return reject(error ?? new Error("Cloudinary upload failed"));
+
         resolve(result.secure_url);
       },
     );
+
     uploadStream.end(buffer);
   });
 }

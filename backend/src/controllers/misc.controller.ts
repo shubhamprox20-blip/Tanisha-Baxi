@@ -57,3 +57,19 @@ export async function uploadFile(req: Request, res: Response): Promise<void> {
   const url = await uploadToCloudinary(req.file.buffer, req.file.originalname);
   res.json({ status: "success", url });
 }
+
+export async function uploadHero(req: Request, res: Response): Promise<void> {
+  if (!req.file) throw ApiError.badRequest("No file uploaded");
+
+  const url = await uploadToCloudinary(
+    req.file.buffer,
+    req.file.originalname,
+    true,
+  );
+
+  res.json({
+    status: "success",
+    url,
+  });
+}
+
