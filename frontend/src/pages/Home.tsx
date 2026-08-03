@@ -394,7 +394,7 @@ useEffect(() => {
                   <div className="sico">✉</div>
                   <div className="contact-info">
                     <div className="contact-phone">+91 9183268890</div>
-                    <div className="contact-email">admin@taneshabaxi.com</div>
+                    {/* <div className="contact-email">admin@taneshabaxi.com</div> */}
                   </div>
                 </div>
                 <h4>Contact Us</h4>
