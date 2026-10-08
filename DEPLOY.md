@@ -101,7 +101,7 @@ product row survives, the picture does not. Options:
 
 - Have the admin pick one of the built-in gradient presets rather than uploading.
 - Add a Render persistent disk mounted at `backend/uploads` (paid plan).
-- Move uploads to an object store (Cloudinary's free tier fits this volume).
+- Uploads are stored in Supabase Storage.
 
 ---
 

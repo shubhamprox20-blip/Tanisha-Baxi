@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { execute, query } from "../db/pool.js";
 import { ApiError } from "../utils/ApiError.js";
-import { uploadToCloudinary } from "../services/cloudinary.js";
+import { uploadToSupabase } from "../services/supabase.js";
 
 export async function createAppointment(req: Request, res: Response): Promise<void> {
   const { client_name, consultation_type, appointment_date } = req.body as {
@@ -51,20 +51,28 @@ export async function trackOrder(req: Request, res: Response): Promise<void> {
   res.json({ status: "success", data: rows[0] });
 }
 
-/** Multer buffers the file; upload it to Cloudinary and return the CDN URL. */
+/** Multer buffers the file; upload it to Supabase Storage and return the public URL. */
 export async function uploadFile(req: Request, res: Response): Promise<void> {
   if (!req.file) throw ApiError.badRequest("No file uploaded");
-  const url = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+  const url = await uploadToSupabase(req.file.buffer, req.file.originalname);
   res.json({ status: "success", url });
 }
 
 export async function uploadHero(req: Request, res: Response): Promise<void> {
   if (!req.file) throw ApiError.badRequest("No file uploaded");
 
-  const url = await uploadToCloudinary(
+  const url = await uploadToSupabase(
     req.file.buffer,
     req.file.originalname,
     true,
+  );
+
+  await execute(
+    `UPDATE site_settings
+     SET hero_image_url = $1,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = 1`,
+    [url],
   );
 
   res.json({
@@ -72,4 +80,13 @@ export async function uploadHero(req: Request, res: Response): Promise<void> {
     url,
   });
 }
+export async function getHeroImage(req: Request, res: Response): Promise<void> {
+  const rows = await query<{ hero_image_url: string | null }>(
+    "SELECT hero_image_url FROM site_settings WHERE id = 1",
+  );
 
+  res.json({
+    status: "success",
+    url: rows[0]?.hero_image_url ?? null,
+  });
+}

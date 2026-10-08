@@ -54,11 +54,11 @@ export const env = {
     maxBytes: Number(optional("MAX_UPLOAD_BYTES", "4194304")),
   },
 
-  cloudinary: {
-    cloudName: required("CLOUDINARY_CLOUD_NAME"),
-    apiKey: required("CLOUDINARY_API_KEY"),
-    apiSecret: required("CLOUDINARY_API_SECRET"),
-  },
+  supabase: {
+  url: required("SUPABASE_URL"),
+  serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
+  bucket: optional("SUPABASE_STORAGE_BUCKET", "product-images"),
+},
 
   seed: {
     adminEmail: optional("SEED_ADMIN_EMAIL", "admin@taneshabaxi.com"),

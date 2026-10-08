@@ -52,6 +52,20 @@ useEffect(() => {
   const [modal, setModal] = useState<ModalName>(null);
   const [activeFilter, setActiveFilter] = useState("featured");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 700);
+  const [heroImage, setHeroImage] = useState("");
+
+  useEffect(() => {
+  async function loadHeroImage() {
+    try {
+      const response = await api.get<{ url: string | null }>("/hero-image");
+      setHeroImage(response.url ?? "");
+    } catch (err) {
+      console.error("Failed to load hero image:", err);
+    }
+  }
+
+  void loadHeroImage();
+}, []);
 
 useEffect(() => {
   const onResize = () => setIsMobile(window.innerWidth <= 700);
@@ -226,7 +240,11 @@ useEffect(() => {
         {/* HERO */}
         <section id="hero">
           <div className="hero-img-wrap">
-            <img src="https://res.cloudinary.com/zdxx02hz/image/upload/tanesha-baxi/hero.jpg" className="hero-img"/>
+            <img
+  src={heroImage}
+  className="hero-img"
+  alt="Tanesha Baxi"
+ />
           </div>
           <div className="hi">
             <div className="kicker">Demi Couture · Finewear By Tanesha Baxi</div>
