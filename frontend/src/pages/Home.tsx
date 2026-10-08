@@ -58,7 +58,11 @@ useEffect(() => {
   async function loadHeroImage() {
     try {
       const response = await api.get<{ url: string | null }>("/hero-image");
-      setHeroImage(response.url ?? "");
+      if (typeof response.url === "string") {
+  setHeroImage(response.url);
+} else {
+  setHeroImage("");
+}
     } catch (err) {
       console.error("Failed to load hero image:", err);
     }
