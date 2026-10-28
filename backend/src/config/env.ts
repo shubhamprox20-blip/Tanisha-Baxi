@@ -53,13 +53,6 @@ export const env = {
     // 4 MB — stays under Vercel's 4.5 MB serverless payload limit.
     maxBytes: Number(optional("MAX_UPLOAD_BYTES", "4194304")),
   },
-
-  supabase: {
-  url: required("SUPABASE_URL"),
-  serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
-  bucket: optional("SUPABASE_STORAGE_BUCKET", "product-images"),
-},
-
   seed: {
     adminEmail: optional("SEED_ADMIN_EMAIL", "admin@taneshabaxi.com"),
     adminPassword: optional("SEED_ADMIN_PASSWORD", "change-me-strong"),
